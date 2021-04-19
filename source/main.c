@@ -18,7 +18,7 @@ void TimerISR()
 	TimerFlag = 1;
 }
 
-enum SM_States {SM_Init, SM_Start, SM_Wait1, SM_Next, SM_Lock} SM_State;
+enum SM_States {SM_Init, SM_PA0, SM_Wait1, SM_Wait2, SM_PA1, SM_Wait3, SM_Both} SM_State;
 
 void TickFct_Press()
 {
@@ -30,55 +30,81 @@ void TickFct_Press()
 			{
 				SM_State = SM_Init;	
 			}
-			else if(PINA == 0x04)
+			else if(PINA == 0x01)
 			{
-				SM_State = SM_Start;
+				SM_State = SM_PA0;
 			}
-			else if(PINA == 0x80)
+			else if(PINA == 0x02)
 			{
-				SM_State = SM_Lock;
+				SM_State = SM_PA1;
 			}
-			else
+			else if(PINA == 0x03)
 			{
-				SM_State = SM_Init;
+				SM_State = SM_Both;
 			}
 			break;
-		case(SM_Start):
-			if(PINA != 0x00)
-			{
-				SM_State = SM_Start;
-			}
-			else
-			{
-				SM_State = SM_Wait1;
-			}
+		case(SM_PA0):
+			SM_State = SM_Wait1;
 			break;
 		case(SM_Wait1):
-			if(PINA == 0x02)
+			if(PINA == 0x01)
 			{
-				SM_State = SM_Next;
+				SM_State = SM_PA0;
+			}
+			else if(PINA == 0x02)
+			{
+				SM_State = SM_PA1;
+			}
+			else if(PINA == 0x03)
+			{
+				SM_State = SM_Both;
 			}
 			else if(PINA == 0x00)
 			{
 				SM_State = SM_Wait1;
 			}
-			else if(PINA != 0x00 && PINA != 0x02)
+			break;
+		case(SM_Wait2):
+			if(PINA == 0x00)
 			{
-				SM_State = SM_Init;
+				SM_State = SM_Wait2;
+			}
+			else if(PINA == 0x01)
+			{
+				SM_State = SM_PA0;
+			}
+			else if(PINA == 0x02)
+			{
+				SM_State = SM_PA1;
+			}
+			else if(PINA == 0x03)
+			{
+				SM_State = SM_Both;
 			}
 			break;
-		case(SM_Next):
-			if(PINA == 0x80)
-			{
-				SM_State = SM_Lock;
-			}
-			else
-			{
-				SM_State = SM_Next;
-			}
+		case(SM_PA1):
+			SM_State = SM_Wait2;
 			break;
-		case(SM_Lock):
-			SM_State = SM_Init;
+		case(SM_Both):
+			SM_State = SM_Wait3;
+			break;
+		case(SM_Wait3):
+			if(PINA == 0x00)
+			{
+				SM_State = SM_Wait3;
+			}
+			else if(PINA == 0x01)
+			{
+				SM_State = SM_PA0;
+			}
+			else if(PINA == 0x02)
+			{
+				SM_State = SM_PA1;
+			}
+			else if(PINA == 0x03)
+			{
+				SM_State = SM_Both;
+			}
 			break;
 		default:
 			break;
@@ -88,22 +114,44 @@ void TickFct_Press()
 	switch(SM_State) //State actions
 	{
 		case(SM_Init):
-			PORTC = 0x00;
-			PORTB = 0x00;
+			PORTC = 0x07;
 			break;
-		case(SM_Start):
-			PORTC = 0x01;
+		case(SM_PA0):
+			if(PORTC != 0x09 && PINA != 0x03)
+			{
+				PORTC = PORTC + 1;
+			}
+			else if(PORTC != 0x09)
+			{
+				PORTC = PORTC + 1;
+			}
+			if(PINA == 0x03)
+			{
+				PORTC = 0x00;
+			}
 			break;
 		case(SM_Wait1):
-			PORTC = 0x02;
 			break;
-		case(SM_Next):
-			PORTB = 0x01;
-			PORTC = 0x03;
+		case(SM_Wait2):
 			break;
-		case(SM_Lock):
-			PORTC = 0x04;
-			PORTB = 0x00;
+		case(SM_PA1):
+			if(PORTC == 0)
+			{
+				break;
+			}
+			else if(PINA == 0x03)
+			{
+				PORTC = 0x00;
+			}
+			else
+			{
+				PORTC = PORTC - 1;
+			}
+			break;
+		case(SM_Wait3):
+			break;
+		case(SM_Both):
+			PORTC = 0;
 			break;
 		default:
 			break;
@@ -114,12 +162,10 @@ void TickFct_Press()
 int main(void) {
     /* Insert DDR and PORT initializations */
     DDRA = 0x00; PORTA = 0xFF; //sets PINA as input
-    DDRB = 0xFF; PORTB = 0x00;
-    DDRC = 0xFF; PORTC = 0x00; //sets PORTC as output
+    DDRC = 0xFF; PORTC = 0x00; //sets PORTB as output
     /* Insert your solution below */
     SM_State = SM_Init;
-    PORTC = 0x00;
-    PORTB = 0x00;   
+    PORTC = 0x07;   
     while (1) {
 	TickFct_Press();
 	//TimerTick();

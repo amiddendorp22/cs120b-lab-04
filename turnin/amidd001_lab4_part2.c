@@ -117,11 +117,11 @@ void TickFct_Press()
 			PORTC = 0x07;
 			break;
 		case(SM_PA0):
-			if(PORTC != 9 && PINA != 0x03)
+			if(PORTC != 0x09 && PINA != 0x03)
 			{
 				PORTC = PORTC + 1;
 			}
-			else if(PORTC != 9)
+			else if(PORTC != 0x09)
 			{
 				PORTC = PORTC + 1;
 			}
